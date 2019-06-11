@@ -1,0 +1,146 @@
+---
+title: '#KindnessInScience'
+author: "Jennifer Pannell"
+date: "10 June 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+
+library(twitteR)
+library(tidyverse)
+
+library(tm)
+library(tidytext)
+library(stringr)
+
+library(wordcloud2)
+library(htmlwidgets)
+library(webshot)
+
+```
+
+## Get the data
+```{r connect to twitter}
+
+consumer_key = 'your key here'
+consumer_secret = 'your secret here'
+access_token = 'your token here'
+access_token_secret = 'your token secret here'
+
+setup_twitter_oauth(consumer_key, consumer_secret, access_token, access_token_secret)
+
+```
+
+```{r download tweets}
+
+kind_twitter <- searchTwitter("#KindnessInScience",since='2017-01-01',n=5000)
+
+kind <- twListToDF(kind_twitter) # Convert to data frame
+
+# only returns tweets from last 7 days due to the API the package uses
+
+rm(kind_twitter, kind_twitter_df, consumer_key, consumer_secret, access_token, access_token_secret)
+```
+
+# If you require tweets from more than 7 days ago
+
+You need to use python - twitterscraper
+Available at https://github.com/taspinar/twitterscraper
+Run in anaconda prompt: 
+*pip install twitterscraper
+*twitterscraper '#KindnessInScience' --limit 1000 --output kindness.json 
+
+Then read JSON into R:
+*library("rjson")
+*json_file <- ("kindness.json")
+*json_data <- fromJSON(file=json_file)
+*kind <- ldply (json_data, data.frame) # turns list into data frame
+*rm(json_data, json_file)
+
+## Tidy up the text
+Tweet text needs to be tidied by splitting into words, removing punctuation and numbers and words like "the", "and", etc.
+```{r wrangle data and tidy}
+# make sure the tweets are stored as character data
+kind$text<-as.character(kind$text)
+
+# before we split up, make sure any words that need to stay together are replaced
+kind$text<-gsub("te reo", "tereo", kind$text)
+kind$text<-gsub("ka rawe", "karawe", kind$text)
+kind$text<-gsub("kia ora", "kiaora", kind$text)
+kind$text<-gsub("kia kaha", "kiakaha", kind$text)
+
+
+# use the unnest_tokens function in tidytext to make the word frequency table
+# make into data frame with 1 row per word 
+
+kindTable <- kind %>%
+  unnest_tokens(word, text)
+
+# remove everything except the words column and screen name
+
+kindTable<- kindTable[,c(10,16)]
+
+# remove numbers and punctuation
+kindTable$word<-removeNumbers(kindTable$word) # remove numbers & punctuation
+kindTable$word<-removePunctuation(kindTable$word)
+kindTable<-kindTable[!(is.na(kindTable$word) | kindTable$word==""), ] # remove blank/whitespace words
+
+#remove stop words - aka typically very common words such as "the", "of" etc
+# now 7770 words 
+data(stop_words)
+
+kindTable <- kindTable %>%
+  anti_join(stop_words)
+
+rm(stop_words)
+
+#add word count to table
+kindTable <- kindTable %>%
+  dplyr::count(word, sort=TRUE) 
+
+head(kindTable)
+
+```
+
+# Keep tidying, remove specific words
+Remove any other whitespace, and usernames, and other unwanted words
+```{r further tidying}
+#Remove whitespace, and names that appear in list of usernames who wrote the tweets
+kindTable <-kindTable %>%
+  mutate(word = stripWhitespace(word)) %>%
+  filter(!word %in% tolower(kind$user))
+
+#Still specific words that need to be removed, other user names, leftover words from retweets etc
+kindTable<-kindTable%>%
+  filter(!word %in% c("science","conserteam","twitter", "twittercom", "kindnessinscience", "wwwkindnessinscienceorg", 
+                       "status","https", "pictwittercom","sgalla","http", "i'm", "im", "cameronelissa", "dont",
+                      "bitly", "ca", "ecofebria", "hendysh", "stu", "kirstyduncamp", "lpachter", "resbaz", 
+                      "sianpottenger", "i've","isn't","isnt", "i'd", "aisrayne", "it's", "awisnz", "edyong", "youre", "that's", "we're", "kindness", "taramcallister", "kirstyduncanmp", "gonaturecom"))
+```
+
+# Subset the data for the word cloud to a manageable size
+```{r subset for word cloud}
+# Too many for word cloud to cope with, choose only words that occur more than three times
+clouddat<-subset(kindTable, n>2)
+```
+
+#Create the word cloud
+Use a custom palette or built in, I used online palette generators
+```{r create the word cloud}
+# Create Palette 
+kindPalette <- c("#D5B0AC", "#CEA0EA", "#684551", "#402E2A", "#9CD08F")
+
+mycloud<-wordcloud2(clouddat, color=rep_len(kindPalette, nrow(clouddat)), size=0.5)
+mycloud
+# save it in html
+saveWidget(mycloud,"kis.html",selfcontained = F)
+# save as a pdf
+webshot::install_phantomjs()
+webshot("kis.html","kis.pdf", delay =20, vwidth = 1500, vheight=1000)
+
+```
+
