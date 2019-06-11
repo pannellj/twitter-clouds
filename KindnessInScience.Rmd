@@ -63,6 +63,7 @@ Then read JSON into R:
 
 ## Tidy up the text
 Tweet text needs to be tidied by splitting into words, removing punctuation and numbers and words like "the", "and", etc.
+
 ```{r wrangle data and tidy}
 # make sure the tweets are stored as character data
 kind$text<-as.character(kind$text)
@@ -103,7 +104,6 @@ kindTable <- kindTable %>%
   dplyr::count(word, sort=TRUE) 
 
 head(kindTable)
-
 ```
 
 # Keep tidying, remove specific words
@@ -141,6 +141,5 @@ saveWidget(mycloud,"kis.html",selfcontained = F)
 # save as a pdf
 webshot::install_phantomjs()
 webshot("kis.html","kis.pdf", delay =20, vwidth = 1500, vheight=1000)
-
 ```
 
