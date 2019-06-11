@@ -12,6 +12,7 @@ rm(list=ls())
 
 library(twitteR)
 library(tidyverse)
+library(plyr)
 
 library(tm)
 library(tidytext)
