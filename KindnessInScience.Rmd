@@ -46,20 +46,21 @@ kind <- twListToDF(kind_twitter) # Convert to data frame
 rm(kind_twitter, kind_twitter_df, consumer_key, consumer_secret, access_token, access_token_secret)
 ```
 
-# If you require tweets from more than 7 days ago
+## If you require tweets from more than 7 days ago
 
 You need to use python - twitterscraper
 Available at https://github.com/taspinar/twitterscraper
-Run in anaconda prompt: 
-*pip install twitterscraper
-*twitterscraper '#KindnessInScience' --limit 1000 --output kindness.json 
 
-Then read JSON into R:
-*library("rjson")
-*json_file <- ("kindness.json")
-*json_data <- fromJSON(file=json_file)
-*kind <- ldply (json_data, data.frame) # turns list into data frame
-*rm(json_data, json_file)
+#Run in anaconda prompt: 
+pip install twitterscraper
+twitterscraper '#KindnessInScience' --limit 1000 --output kindness.json 
+
+#Then read JSON into R:
+library("rjson")
+json_file <- ("kindness.json")
+json_data <- fromJSON(file=json_file)
+kind <- ldply (json_data, data.frame) # turns list into data frame
+rm(json_data, json_file)
 
 ## Tidy up the text
 Tweet text needs to be tidied by splitting into words, removing punctuation and numbers and words like "the", "and", etc.
