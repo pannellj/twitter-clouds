@@ -44,7 +44,7 @@ kind <- twListToDF(kind_twitter) # Convert to data frame
 
 # only returns tweets from last 7 days due to the API the package uses
 
-rm(kind_twitter, kind_twitter_df, consumer_key, consumer_secret, access_token, access_token_secret)
+rm(kind_twitter, consumer_key, consumer_secret, access_token, access_token_secret)
 ```
 
 ## If you require tweets from more than 7 days ago
